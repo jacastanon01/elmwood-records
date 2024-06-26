@@ -1,11 +1,10 @@
-# TODO set up flask callback to redirect to auth url
-
 import json
 import os.path
+import pprint
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow, Flow
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 
@@ -46,9 +45,16 @@ def fetch_lot_from_gdrive(lot_str: str, credentials):
 
         try:
             response = request.execute()
-            # print(response, end="\n***************************\n")
-            data = json.dumps(response, sort_keys=True, indent=4)
-            print(data)
+            pprint.pp(response, indent=4)
+            # data = json.dumps(response, sort_keys=True, indent=4)
+            # print(data)
+            if response:
+                files = response.get("files", [])
+                files_data = []
+
+                for f in files:
+                    if f["kind"] == "drive#file":
+                        files_data.append(f)
 
         except HttpError as e:
             print(f"Error response : {e}")
