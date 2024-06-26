@@ -1,3 +1,4 @@
+import itertools
 import json
 import os.path
 import pprint
@@ -55,6 +56,10 @@ def fetch_lot_from_gdrive(lot_str: str, credentials):
                 for f in files:
                     if f["kind"] == "drive#file":
                         files_data.append(f)
+
+            grouped = itertools.groupby(files_data, key=lambda x: (x["id"], x["name"]))
+            groups = [group for group, _ in grouped]
+            pprint.pp(groups, indent=4)
 
         except HttpError as e:
             print(f"Error response : {e}")
