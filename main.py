@@ -2,6 +2,9 @@ import itertools
 import json
 import os.path
 import pprint
+from pdf2image import convert_from_path
+from PIL import Image
+import pytesseract
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -65,5 +68,28 @@ def fetch_lot_from_gdrive(lot_str: str, credentials):
             print(f"Error response : {e}")
 
 
+# TODO Store any fields with relevant data that needs to be input into CKOnline
+# TODO Create a function to check for the presence of fields and return a boolean
+
+
+def extract_text():
+    ck_fields = [
+        "AGE",
+        "SEX",
+        "NAME",
+        "WHERE BURIED | DATE OF BURIAL",
+        "CAUSE OF DEATH",
+        "LATE RESIDENCE",
+        "REMARKS",
+    ]
+    pages = convert_from_path("test.pdf", 300)
+    for page in pages:
+        page.save("out.jpg", "JPEG")
+
+    text = pytesseract.image_to_string(Image.open("out.jpg"))
+    print("\n".join([line for line in text.splitlines() if len(line)]))
+
+
 if __name__ == "__main__":
-    handle_auth()
+    # handle_auth()
+    extract_text()
