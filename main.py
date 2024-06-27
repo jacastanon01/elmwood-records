@@ -68,11 +68,19 @@ def fetch_lot_from_gdrive(lot_str: str, credentials):
             print(f"Error response : {e}")
 
 
+# TODO Store any fields with relevant data that needs to be input into CKOnline
+# TODO Create a function to check for the presence of fields and return a boolean
+
+
 def extract_text():
     ck_fields = [
         "AGE",
         "SEX",
         "NAME",
+        "WHERE BURIED | DATE OF BURIAL",
+        "CAUSE OF DEATH",
+        "LATE RESIDENCE",
+        "REMARKS",
     ]
     pages = convert_from_path("test.pdf", 300)
     for page in pages:
