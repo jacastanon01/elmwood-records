@@ -68,10 +68,6 @@ def fetch_lot_from_gdrive(lot_str: str, credentials):
             print(f"Error response : {e}")
 
 
-# TODO Store any fields with relevant data that needs to be input into CKOnline
-# TODO Create a function to check for the presence of fields and return a boolean
-
-
 def generate_jpg_file(filename: str):
     dirpath = f"{os.getcwd()}/images"
 
@@ -102,62 +98,13 @@ def enhance_image(image_path: str):
         image = ImageEnhance.Contrast(image).enhance(2.4)
         contrast_path = generate_jpg_file("contrast")
         image.save(contrast_path, "JPEG")
-
-        # sharp_path = generate_jpg_file("sharp")
-        # image.save(sharp_path)
-        # image = ImageEnhance.Sharpness(2.0)
         image = image.filter(ImageFilter.MedianFilter)
-
-        # image_np = np.array(image)
-        # image_np = image_np.astype(np.uint8)
-        # block_value = 9
-        # c_value = 3
-        # adaptive_threshold = cv2.adaptiveThreshold(
-        #     image_np,
-        #     255,
-        #     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        #     cv2.THRESH_BINARY,
-        #     block_value,
-        #     c_value,
-        # )
-
-        # image = Image.fromarray(adaptive_threshold)
-        # thresh_path = generate_jpg_file("enhanced_thresh")
-        # image.save(thresh_path, "JPEG")
 
         image = image.point(
             lambda x: 0 if x < 128 else 255, "1"
         )  # Convert each pixel to black or white
         filter_debug = generate_jpg_file("filter_debug")
         image.save(filter_debug, "JPEG")
-
-    # draw = ImageDraw.Draw(image)
-    # width, height = image.size
-
-    # draw.line((0, height * 0.33, width, height * 0.33), fill=255)
-    # draw.line((0, height * 0.66, width, height * 0.66), fill=255)
-    # draw.line((width * 0.33, 0, width * 0.33, height), fill=255)
-    # draw.line((width * 0.66, 0, width * 0.66, height), fill=255)
-
-    # # image.save("enhanced.jpg")
-
-    # source = image.split()
-    # # source1 = source[0].point(lambda x: x < 128)
-    # source2 = source[0].point(lambda x: x * 0.07)
-    # source[0].paste(source2, None, image)
-
-    # r_path = generate_jpg_file("R")
-    # source[0].save(r_path, "JPEG")
-
-    # image = Image.merge(image.mode, source)
-
-    # draw.textbbox((width * 0.2, height * 0.66, width * 0.8, height * 0.7), "")
-
-    # enhancer = ImageEnhance.Sharpness(image2)
-
-    # for i in range(8):
-    #     factor = i / 4.0
-    #     enhancer.enhance(factor).show(f"Sharpness {factor:f}")
 
     return image
 
@@ -182,8 +129,8 @@ def scan_with_fixed_box(image_path: str, box_size: tuple, step_size: tuple):
             ):  # Ensure box is of correct size
                 boxes.append(box)
                 # print(f"Box added: top-left corner=({x},{y}), shape={box.shape}")
-            # else:
-            # print(f"Skipping box at ({x},{y}), shape={box.shape}")
+            else:
+                print(f"Skipping box at ({x},{y}), shape={box.shape}")
 
     print(f"Total boxes scanned: {len(boxes)}")
     return boxes
@@ -196,7 +143,6 @@ def extract_text_from_ocr_boxes(boxes):
         box_image = Image.fromarray(box)
 
         text = extract_text(box_image)
-        # print(text, end="\n================\n")
         extracted_text.append(text)
         box_path = generate_jpg_file(f"box_{i}")
         box_image.save(box_path, "JPEG")
@@ -213,17 +159,12 @@ def extract_text(image):
 
 
 def parse(pdf_text):
-    # Initialize an empty dictionary to store the extracted fields
     fields = {}
 
-    # Iterate over each line of text in the PDF
     for line in pdf_text:
-        print(line, end="\n------------------------\n")
-        # If the line contains an underscore, split it into individual fields
         if "_" in line:
             fields[line.split("_")[0].strip()] = line.split("_")[1].strip()
 
-    # Print out the extracted data for each field
     for field in fields:
         print(f"{field}: {fields[field]}")
 
@@ -243,12 +184,10 @@ def parse_text_to_struct(lines):
     parsed_data = {key: "" for key in expected_fields.keys()}
 
     for i, line in enumerate(lines):
-        # print(line, end="\n----------------------\n")
         for field, keyword in expected_fields.items():
             if i + 1 < len(lines) and keyword in line.upper():
                 if keyword == "AGE":
                     age = line.replace("AGE ", "").replace("NAME ", "")
-                    print(age, end="\n----------------------\n--------------\n")
                     parsed_data[field] = age
                 else:
                     parsed_data[field] = lines[i + (1)].strip()
@@ -273,14 +212,10 @@ def extract_and_parse_text(image_path):
     # text = pytesseract.image_to_string(image, config=r"--oem 3 --psm 6")
     text = "\n".join(texts)
     lines = text.split("\n")
-    # parsed_data = parse(lines)
     print(str(texts).strip().split("\n"))
     parsed_data = parse_text_to_struct(lines)
     pprint.pp(parsed_data, indent=2)
 
 
 if __name__ == "__main__":
-    # handle_auth()
-    # extract_text()
-    # convert_pdf_to_image("test.pdf")
     extract_and_parse_text("test.pdf")
