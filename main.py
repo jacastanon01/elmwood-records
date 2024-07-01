@@ -4,10 +4,20 @@ import pytesseract
 import cv2
 
 from pdf2image import convert_from_path
+from pytesseract import Output
 from PIL import Image, ImageEnhance, ImageFilter
 
 
-def generate_jpg_file(filename: str):
+def generate_jpg_file(filename: str, image) -> str:
+    """creates images folder if one doesn't exist and generates jpg file
+
+    Args:
+        filename (str): Name of jpg file
+        image (Image): image to save
+
+    Returns:
+        str: absolute path to generated jpg
+    """
     dirpath = f"{os.getcwd()}/images"
 
     if not os.path.exists(dirpath):
@@ -17,91 +27,31 @@ def generate_jpg_file(filename: str):
     if os.path.exists(abs_image_path):
         os.remove(abs_image_path)
         print(f"{filename.split("/")[-1]} deleted")
+    image.save(abs_image_path, "JPEG")
     return abs_image_path
 
 
-def convert_pdf_to_image(pdf_path):
+def convert_pdf_to_image(pdf_path: str) -> str:
     pages = convert_from_path(pdf_path, 300)
     for page in pages:
-        abs_image_path = generate_jpg_file("out")
-        page.save(abs_image_path, "JPEG")
+        abs_image_path = generate_jpg_file("pdf_img", page)
     return abs_image_path
 
 
 def enhance_image(image_path: str):
     with Image.open(image_path) as image:
         image = image.convert("L")
-        first_img_path = generate_jpg_file("first")
-        image.save(first_img_path, "JPEG")
+        generate_jpg_file("first", image)
 
         image = ImageEnhance.Contrast(image).enhance(2.4)
-        contrast_path = generate_jpg_file("contrast")
-        image.save(contrast_path, "JPEG")
+        generate_jpg_file("contrast", image)
         image = image.filter(ImageFilter.MedianFilter)
 
         image = image.point(
             lambda x: 0 if x < 128 else 255, "1"
         )  # Convert each pixel to black or white
-        filter_debug = generate_jpg_file("filter_debug")
-        image.save(filter_debug, "JPEG")
 
     return image
-
-
-def scan_with_fixed_box(image_path: str, box_size: tuple, step_size: tuple):
-    # Load the image in grayscale
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    height, width = image.shape
-
-    print(f"Image dimensions: width={width}, height={height}")
-
-    boxes = []
-    for y in range(0, height, step_size[1]):
-        for x in range(0, width, step_size[0]):
-            box = image[y : y + box_size[1], x : x + box_size[0]]
-            print(box.shape)
-            # print(
-            #     f"Scanning box at position x={x}, y={y}, width={box_size[0]}, height={box_size[1]}"
-            # )
-            if (
-                box.shape[0] == box_size[1] and box.shape[1] == box_size[0]
-            ):  # Ensure box is of correct size
-                boxes.append(box)
-                # print(f"Box added: top-left corner=({x},{y}), shape={box.shape}")
-            else:
-                print(f"Skipping box at ({x},{y}), shape={box.shape}")
-
-    print(f"Total boxes scanned: {len(boxes)}")
-    return boxes
-
-
-def extract_text_from_ocr_boxes(boxes):
-    extracted_text = []
-
-    for i, box in enumerate(boxes):
-        box_image = Image.fromarray(box)
-
-        text = extract_text(box_image)
-        extracted_text.append(text)
-        box_path = generate_jpg_file(f"box_{i}")
-        box_image.save(box_path, "JPEG")
-    return extracted_text
-
-
-def extract_text(image):
-    text = pytesseract.image_to_string(image, config=r"--oem 3 --psm 6")  # --oem 3
-    return text
-
-
-def parse(pdf_text):
-    fields = {}
-
-    for line in pdf_text:
-        if "_" in line:
-            fields[line.split("_")[0].strip()] = line.split("_")[1].strip()
-
-    for field in fields:
-        print(f"{field}: {fields[field]}")
 
 
 def parse_text_to_struct(lines):
@@ -109,47 +59,75 @@ def parse_text_to_struct(lines):
         "name": "NAME",
         "age": "AGE",
         "sex": "SEX",
-        "where_buried": "WHERE BURIED",
-        "date_of_burial": "DATE OF BURIAL",
+        "buried_info": "WHERE BURIED | DATE OF BURIAL",
         "cause_of_death": "CAUSE OF DEATH",
         "late_residence": "LATE RESIDENCE",
         "undertaker": "UNDERTAKER",
         "remarks": "REMARKS",
     }
     parsed_data = {key: "" for key in expected_fields.keys()}
+    print(lines)
+    i = 0
+    while i < len(lines):
+        # print(lines[i], end="\n======================\n")
+        for field, label in expected_fields.items():
 
-    for i, line in enumerate(lines):
-        for field, keyword in expected_fields.items():
-            if i + 1 < len(lines) and keyword in line.upper():
-                if keyword == "AGE":
-                    age = line.replace("AGE ", "").replace("NAME ", "")
-                    parsed_data[field] = age
-                else:
-                    parsed_data[field] = lines[i + (1)].strip()
+            line = lines[i].strip()
+            if line and (line in label or label in line):
+                print(line, end="!!!!!!!!\n")
+                i += 1
+                if lines[i].strip() in label or label in lines[i].strip():
+                    i += 1
+                value = []
+                # print(line, lines[i], field, label, sep=" : ", end="\n-------------\n")
+
+                while (
+                    i < len(lines)
+                    and lines[i].strip() != ""
+                    # and not (lines[i].strip() in label or label in lines[i].strip())
+                    # and not any(kw in lines[i] for kw in expected_fields.values())
+                ):
+                    print(lines[i].strip(), label, sep=" in ")
+
+                    value.append(lines[i].strip())
+
+                    i += 1
+
+                value_str = " ".join(value)
+                # print(value)
+                parsed_data[field] = value_str
+        i += 1
 
     return parsed_data
 
 
-def extract_and_parse_text(image_path):
-    image_path = convert_pdf_to_image("test.pdf")
-    image = enhance_image(image_path)
+def extract_and_parse_text(pdf_path):
+    my_config = r"--oem 3 --psm 3"
+    pages = convert_from_path(pdf_path, 300)
+    image_path = generate_jpg_file("pdf_img", pages[1])
 
-    boxes = scan_with_fixed_box(
-        image_path,
-        box_size=(image.width, image.height // 3),
-        step_size=(image.width // 2, image.height // 8),
+    image = cv2.imread(image_path)
+    data = pytesseract.image_to_data(
+        image, lang="eng", config=my_config, output_type=Output.DICT
     )
-    texts = extract_text_from_ocr_boxes(boxes)
+    n_boxes = len(data["level"])
 
-    for i, text in enumerate(texts):
-        print(f"Box {i} text: {text}")
+    for i in range(n_boxes):
+        (x, y, w, h) = (
+            data["left"][i],
+            data["top"][i],
+            data["width"][i],
+            data["height"][i],
+        )
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # text = pytesseract.image_to_string(image, config=r"--oem 3 --psm 6")
-    text = "\n".join(texts)
-    lines = text.split("\n")
-    print(str(texts).strip().split("\n"))
-    parsed_data = parse_text_to_struct(lines)
-    pprint.pp(parsed_data, indent=2)
+    found_text = data["text"]
+
+    if found_text is not None:
+        parsed_text = parse_text_to_struct(found_text)
+    pprint.pp(parsed_text, indent=2)
+    # cv2.imshow("img", image)
+    # cv2.waitKey(0)
 
 
 if __name__ == "__main__":
