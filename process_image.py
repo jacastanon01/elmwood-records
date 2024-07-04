@@ -52,16 +52,16 @@ def process_image():
     # erosion = cv2.erode(grey, kernel, iterations=1)
     # cv2.imwrite("erosion.jpg", erosion)
 
-    threshold, im_bw = cv2.threshold(image, 200, 235, cv2.THRESH_BINARY)
+    threshold, im_bw = cv2.threshold(image, 230, 255, cv2.THRESH_BINARY)
 
     cv2.imwrite(bw_path, im_bw)
 
+    im_bw2 = adapt_thresh(image)
     # im_bw = adapt_thresh(image)
-    im_bw = adapt_thresh(image)
     # text = pytesseract.image_to_string(im_bw, lang="eng", config=my_config)
     # print(f"Final Text: ", text, end="\n\n\n")
 
-    dilation = remove_noise(image)
+    dilation = remove_noise(im_bw)
     cv2.imwrite(no_noise_path, dilation)
     # contours, hierarchy = cv2.findContours(
     #     dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
@@ -76,11 +76,11 @@ def process_image():
 
     # cv2.imwrite("images/final.jpg", image)
 
-    ero_im_thin = thin_or_thick_font(im_bw)
+    ero_im_thin = thin_or_thick_font(image)
     # im_thick = thin_or_thick_font(im_bw, thick=True)
     cv2.imwrite("images/erode.jpg", ero_im_thin)
 
-    for i in (im_bw, ero_im_thin, dilation):
+    for i in (im_bw2, ero_im_thin, dilation):
         text = pytesseract.image_to_string(i, lang="eng", config=my_config)
         print(f"Final Text {i}: ", text, end="\n\n\n")
 
@@ -100,7 +100,7 @@ def remove_noise(image):
     kernel = np.ones([2, 2], np.uint8)
     image = cv2.dilate(image, kernel, iterations=1)
     kernel = np.ones([1, 1], np.uint8)
-    image = cv2.erode(image, kernel, iterations=1)
+    image = cv2.erode(image, kernel, iterations=10)
     image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
     image = cv2.medianBlur(image, 3)
     image = cv2.bitwise_not(image)
@@ -109,16 +109,18 @@ def remove_noise(image):
 
 def adapt_thresh(image):
     # image = cv2.bitwise_not(image)
-    image = cv2.fastNlMeansDenoising(image, h=10)
-    image = cv2.GaussianBlur(image, (3, 3), 2)
-    image = cv2.adaptiveThreshold(
-        image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-    )
+    kernel_dilate = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
+    kernel_erode = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
     image = cv2.bitwise_not(image)
-    image = cv2.dilate(image, np.ones([2, 2], np.uint8), iterations=1)
-    image = cv2.erode(image, np.ones([1, 1], np.uint8), iterations=5)
+    image = cv2.fastNlMeansDenoising(image, h=60)
+    image = cv2.GaussianBlur(image, (3, 3), 2)
+    image = cv2.dilate(image, kernel_dilate, iterations=2)
+    image = cv2.erode(image, kernel_erode, iterations=1)
     image = cv2.bitwise_not(image)
+    image = cv2.adaptiveThreshold(
+        image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 5
+    )
 
     cv2.imwrite("images/threshold.jpg", image)
     return image
