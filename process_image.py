@@ -20,8 +20,7 @@ def calulcate_white_px(image) -> int:
     """
     width, height = image.shape
 
-    _, im_bw = cv2.threshold(image, 240, 255, cv2.THRESH_BINARY)
-    return cv2.countNonZero(im_bw) / (height * width)
+    return cv2.countNonZero(image) / (height * width)
 
 
 def process_image(pdf_path: str):
@@ -39,29 +38,37 @@ def process_image(pdf_path: str):
 
     first_page_pixels, second_page_pixels = [np.array(p, np.uint8) for p in pages]
 
+    # _, im_bw = cv2.threshold(first_page_pixels, 210, 240, cv2.THRESH_BINARY)
     first_white = calulcate_white_px(first_page_pixels)
     second_white = calulcate_white_px(second_page_pixels)
 
     page = pages[0] if first_white < second_white else pages[1]
+
     # page.save("images/page.jpg", "JPEG")
 
     im_path = generate_jpg_file("name", page)
     image = cv2.imread(im_path)
-
-    if len(image.shape) == 3:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     assert image is not None
+    # ntext = pytesseract.image_to_string(image, lang="eng", config=my_config)
+    # print(ntext)
+    im_bw = adapt_thresh(image)
+    # threshold, im_bw = cv2.threshold(
+    #     image, 210, 245, cv2.THRESH_BINARY
+    # )  # cv2.THRESH_OTSU
+
+    cv2.imwrite("images/im_bw.jpg", im_bw)
+    ntext = pytesseract.image_to_string(im_bw, lang="eng", config=my_config)
+    print(ntext)
+    return
     # cv2.imwrite("images/page.jpg", image)
 
-    # box_img = pytesseract.image_to_string(image_boxes, lang="eng", config=my_config)
-    threshold, im_bw = cv2.threshold(
-        image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
-    )
+    # _, im_bw = cv2.threshold(image, 210, 240, cv2.THRESH_BINARY)
 
     # noise = remove_noise(image)
     # thresh = adapt_thresh(image)
-    image_boxes = draw_boundary_boxes(im_bw)
+    image_boxes = draw_boundary_boxes(image)
 
     # im_bw = cv2.dilate(im_bw, np.ones((2, 2), np.uint8), iterations=1)
     # im_bw = cv2.erode(im_bw, np.ones((1, 1), np.uint8), iterations=1)
@@ -70,7 +77,7 @@ def process_image(pdf_path: str):
 
     # cv2.imwrite(bw_path, )
 
-    for i in (image_boxes, im_bw):
+    for i in (image_boxes, image):
         ntext = pytesseract.image_to_string(i, lang="eng", config=my_config)
         print(f"Final Text {ntext}", end="\n\n\n")
 
@@ -176,20 +183,20 @@ def adapt_thresh(image):
     # if len(image.shape) == 3:
     #     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # image = cv2.bitwise_not(image)
-    kernel_dilate = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    kernel_dilate = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
     kernel_erode = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
     image = image.copy()
 
     image = cv2.bitwise_not(image)
     image = cv2.fastNlMeansDenoising(image, h=50)
-    image = cv2.GaussianBlur(image, (7, 7), 0)
+    image = cv2.GaussianBlur(image, (3, 3), 0)
     cv2.imwrite("images/blur.jpg", image)
-    image = cv2.dilate(image, kernel_dilate, iterations=2)
+    image = cv2.dilate(image, kernel_dilate, iterations=1)
     image = cv2.erode(image, kernel_erode, iterations=1)
     image = cv2.bitwise_not(image)
     image = cv2.adaptiveThreshold(
-        image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 3
+        image, 240, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 3
     )
 
     cv2.imwrite("images/threshold.jpg", image)
