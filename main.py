@@ -161,7 +161,7 @@ def data_to_dict(data: list[str]) -> dict[str, str] | None:
 
 def extract_and_parse_text(pdf_path):
     my_config = r"--oem 3 --psm 3"  # 3 4 6 11
-    page = convert_from_path(pdf_path, 300, single_file=True, grayscale=True)[0]
+    page = convert_from_path(pdf_path, 300, single_file=True, grayscale=True)
 
     image_path = generate_jpg_file(f"pdf_img", page)
 
