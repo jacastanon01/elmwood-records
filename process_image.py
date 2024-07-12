@@ -70,7 +70,7 @@ def adapt_thresh(image):
     image = image.copy()
 
     image = cv2.bitwise_not(image)
-    image = cv2.fastNlMeansDenoising(image, h=60)
+    image = cv2.fastNlMeansDenoising(image, h=40)
     image = cv2.GaussianBlur(image, (7, 7), 0)
     cv2.imwrite("images/blur.jpg", image)
     # image = cv2.dilate(image, kernel_dilate, iterations=1)
