@@ -60,18 +60,19 @@ class SelectROI:
         _, ax = plt.subplots()
         ax.imshow(image_gray)
 
-        # # Create a rectangle selector
-        rect_selector = RectangleSelector(
-            ax,
-            self.onselect,
-            minspanx=5,  # Minimum span in pixels for the rectangle to be valid
-            minspany=5,  # Minimum span in pixels for the rectangle to be valid
-            useblit=True,  # Use blitting for faster redrawing
-            button=MouseButton,  # Button(s) used for selection, 1 for left mouse button
-            spancoords="pixels",  # Coordinates are in pixels
-            interactive=True,  # Allow interactive updates of the rectangle
-            ignore_event_outside=True,  # Allow selection even if dragging starts outside the Axes
-        )
+        with plt.ion():
+            # # Create a rectangle selector
+            rect_selector = RectangleSelector(
+                ax,
+                self.onselect,
+                minspanx=5,  # Minimum span in pixels for the rectangle to be valid
+                minspany=5,  # Minimum span in pixels for the rectangle to be valid
+                useblit=True,  # Use blitting for faster redrawing
+                button=MouseButton,  # Button(s) used for selection, 1 for left mouse button
+                spancoords="pixels",  # Coordinates are in pixels
+                interactive=True,  # Allow interactive updates of the rectangle
+                ignore_event_outside=True,  # Allow selection even if dragging starts outside the Axes
+            )
         plt.show()
 
         # self.save_image(save_path)
