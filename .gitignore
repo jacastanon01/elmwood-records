@@ -7,3 +7,5 @@ token.json
 __pycache__
 Cards
 Notes.md
+*.txt
+images
