@@ -98,15 +98,18 @@ def save_ref_points(
         json_path (str): The path to the JSON file.
     """
     formatted_points = [
-        {
-            "start": [float(coords) for coords in start],
-            "end": [float(coords) for coords in end],
-        }
+        # {
+        #     "start": [float(coords) for coords in start],
+        #     "end": [float(coords) for coords in end],
+        # }
+        (start, end)
         for start, end in ref_points
     ]
 
     with open(json_path, "w") as f:
-        json.dump({"ref_points": formatted_points}, f, indent=4)
+        for start, end in ref_points:
+            f.write(f"{start[0]} {start[1]} {end[0]} {end[1]}\n")
+        # json.dump({"ref_points": formatted_points}, f, indent=4)
 
     print(f"Reference points saved to {json_path}")
 
@@ -134,4 +137,4 @@ def main(image_path: str, json_path: str) -> None:
 
 
 if __name__ == "__main__":
-    main("images/blur.jpg", "ref_points.json")
+    main("images/blur.jpg", "ref_points.txt")
