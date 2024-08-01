@@ -122,23 +122,6 @@ def process_image(pdf_path: str) -> str:
         return ""
 
 
-def select_files(directory: str, max_files=10) -> list[str]:
-    current_dir = os.getcwd()
-    dir = f"{current_dir}/{directory}"
-    all_files = os.listdir(dir)
-    # for f in all_files:
-    #     p = os.path.join(dir, f)
-    #     print(p)
-
-    # # (print(f) for f in all_files if os.path.isfile(os.path.join(dir, f)))
-    # if all_files is None:
-    #     return []
-
-    files = [os.path.join(dir, f) for f in all_files]
-
-    return files[:max_files]
-
-
 def other(file: str):
     with open(file, "rb") as f:
         images = convert_from_bytes(f.read(), 500)
@@ -156,58 +139,3 @@ def other(file: str):
             cv2.line(page, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
         cv2.imwrite("lines_detected.jpg", page)
-        # Ensure page is in grayscale before saving and OCR processing
-        # if page is not None:
-        #     if len(page.shape) == 3:  # Check if page has 3 channels (color image)
-        #         page = cv2.cvtColor(page, cv2.COLOR_BGR2GRAY)
-        #     filename = "{}.jpg".format(os.getpid())
-        #     if page.size > 0:
-        #         cv2.imwrite(filename, page)
-        #         text = pytesseract.image_to_string(cv2.imread(filename), lang="eng", config=r"--oem 3 --psm 11")
-        #         os.remove(filename)
-        #         return text
-        #     else:
-        #         print("Error: The image is empty or not loaded correctly.")
-        # else:
-        #     print("Error: No page found or page is None.")
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    def select_roi(event, x, y, flags, param):
-        global ref_point, image
-
-        if event == cv2.EVENT_LBUTTONDOWN:
-            ref_point = [(x, y)]
-            cropping = True
-
-        elif event == cv2.EVENT_LBUTTONUP:
-            ref_point.append((x, y))
-            cropping = False
-
-            cv2.rectangle(image, ref_point[0], ref_point[1], (0, 255, 0), 2)
-            plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-            plt.show()
-
-    # Initialize global variables
-    image = cv2.imread("images/blur.jpg")
-    ref_point = []
-
-    # cv2.startWindowThread()
-    cv2.namedWindow("image")
-    cv2.setMouseCallback("image", select_roi)
-
-    while True:
-
-        cv2.imshow("image", image)
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("r"):  # Reset the cropping region
-            image = image.copy()
-        elif key == ord("c"):  # Break from the loop
-            break
-
-    cv2.destroyAllWindows()
-
-    # Print the coordinates of the selected region
-    print(ref_point)
