@@ -1,3 +1,4 @@
+from itertools import batched
 import cv2
 import pytesseract
 import os
@@ -11,18 +12,25 @@ CURRENT_DIR = os.getcwd()
 
 def read_coordinates(
     file_path: str,
-) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+) -> list[tuple[float, ...]]:
     try:
         with open(file_path, "r") as f:
             lines = f.readlines()
         # print(lines)
         coords = []
+        group_tuples = []
+        # print(lines)
         for line in lines:
             line = line.strip()
             # print(line.split(" "))
+            # print(line)
+            group_tuples = list(batched((float(i) for i in line.split(" ")), 2))
+            # print(group_tuples)
             x1, y1, x2, y2 = line.split(" ")
-            coords.append(((float(x1), float(y1)), (float(x2), float(y2))))
-        return [(coords[0], coords[1]), (coords[2], coords[3])]
+            coords.append(group_tuples)
+        # print(coords)
+        # return tuple((coords[0], coords[1])), tuple((coords[2], coords[3]))
+        return coords
     except FileNotFoundError:
         print("File not found!")
         exit()
@@ -31,7 +39,7 @@ def read_coordinates(
 def crop_segment(image, start, end):
     x1, y1 = start
     x2, y2 = end
-    print(start, end, sep="\n")
+    print(start, end, x1, y1, sep="\n")
     return image[y1:y2, x1:x2]
 
 
@@ -89,18 +97,18 @@ def main():
     )
 
     files = select_files("Cards/CO-DAR")
-    # images = [process_image(file) for file in files]
-    points = read_coordinates("ref_points.txt")
+    images = [process_image(file) for file in files]
+    cv2.imwrite("image.jpg", images[0])
+    # ? convert np array into image to pass to functions
+    # points = read_coordinates("ref_points.txt")
+    # # print(points)
 
-    coords = [s for s in points]
-    print(points)
-    # segments = [
-    #     crop_segment("images/im_bw.jpg", start, end)
-    #     for i, (start, end) in enumerate(coords)
-    # ]
+    # # for p in points:
+    # #     print(p, end="\n------\n")
+    # segments = [crop_segment(images[0], start, end) for (start, end) in points]
     # process = [preprocess_segment(segment, i) for i, segment in enumerate(segments)]
     # text = [extract_text(segment) for segment in process]
-    # print(text[0])
+    # print(text)
 
 
 if __name__ == "__main__":
