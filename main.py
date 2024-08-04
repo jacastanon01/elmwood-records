@@ -70,7 +70,7 @@ def process_image(pdf_path: str):
         print(f"An error occurred while converting the PDF: {e}")
 
     image = get_form_page(pages)
-    return image
+    return image, pdf_path[-9:-5]
 
 
 def extract_text(segment):
@@ -98,7 +98,10 @@ def main():
 
     files = select_files("Cards/CO-DAR")
     images = [process_image(file) for file in files]
-    cv2.imwrite("image.jpg", images[0])
+    image = images[0]
+    cv2.imwrite("image.jpg", image[0])
+    print(image[1])
+
     # ? convert np array into image to pass to functions
     # points = read_coordinates("ref_points.txt")
     # # print(points)
