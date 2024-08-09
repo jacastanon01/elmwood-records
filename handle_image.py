@@ -110,8 +110,9 @@ def convert_pdf_to_image(pdf_path: str):
 
 
 def extract_text(segment):
-    my_config = r"--oem 3 --psm 6"  # 3 4 6 11
+    my_config = r"--oem 3 --psm 11"  # 3 4 6 11
     text = pytesseract.image_to_string(segment, lang="eng", config=my_config)
+    text = text.replace("\n", "")
     return text
 
 

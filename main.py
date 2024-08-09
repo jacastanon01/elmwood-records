@@ -14,12 +14,12 @@ def main():
     files = select_files("Cards/CO-DAR")
     images = [convert_pdf_to_image(file) for file in files[:5]]
 
-    image = images[0]
-    cv2.imwrite("image.jpg", image[0])
+    for i, image in enumerate(images):
+        cv2.imwrite(f"image-{i}.jpg", image[0])
     points = read_coordinates("ref_points.txt")
 
     segments = [
-        crop_segment(img[0], start, end) for (start, end) in points for img in images
+        crop_segment(img[0], start, end) for img in images for (start, end) in points
     ]
     process = [preprocess_segment(segment, i) for i, segment in enumerate(segments)]
     text = [extract_text(segment) for segment in process]
