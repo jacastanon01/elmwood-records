@@ -58,20 +58,13 @@ def read_coordinates(
     try:
         with open(file_path, "r") as f:
             lines = f.readlines()
-        # print(lines)
+
         coords = []
         group_tuples = []
-        # print(lines)
         for line in lines:
             line = line.strip()
-            # print(line.split(" "))
-            # print(line)
             group_tuples = list(batched((float(i) for i in line.split(" ")), 2))
-            # print(group_tuples)
-            x1, y1, x2, y2 = line.split(" ")
             coords.append(group_tuples)
-        # print(coords)
-        # return tuple((coords[0], coords[1])), tuple((coords[2], coords[3]))
         return coords
     except FileNotFoundError:
         print("File not found!")
@@ -79,9 +72,10 @@ def read_coordinates(
 
 
 def crop_segment(image, start, end):
-    x1, y1 = start
-    x2, y2 = end
-    print(start, end, x1, y1, sep="\n")
+    # x1, y1 = ((int(x), int(y)) for x, y in start)
+    # x2, y2 = ((int(x), int(y)) for x, y in end)
+    x1, y1 = map(int, start)
+    x2, y2 = map(int, end)
     return image[y1:y2, x1:x2]
 
 
